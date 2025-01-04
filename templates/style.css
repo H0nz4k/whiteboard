@@ -1,0 +1,83 @@
+/* Globální nastavení */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+}
+
+/* Styl hlavičky a tlačítek */
+.header {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+}
+
+.button {
+    padding: 8px 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 20px;
+}
+
+.button:hover {
+    background-color: #45a049;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.divider {
+    border: 0;
+    border-top: 2px solid #ccc;
+    margin: 15px 0;
+}
+
+/* Styl pro záznamy změn */
+.changes {
+    padding: 20px;
+}
+
+.change-record {
+    margin-bottom: 20px;
+}
+
+.timestamp {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+/* Styl obrázků a jejich zarovnání */
+.images {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.image-container {
+    text-align: center;
+    width: 48%;
+}
+
+.image-container img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+

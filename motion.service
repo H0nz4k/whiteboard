@@ -1,0 +1,17 @@
+[Unit]
+Description=Camera Motion Detection Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/camera_stream/motion_detection.py
+WorkingDirectory=/opt/camera_stream
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=10
+User=root
+KillMode=process
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

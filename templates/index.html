@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Stream</title>
+</head>
+<body>
+    <h2>Live Stream</h2>
+    <img src="{{ url_for('video_feed') }}" width="640" height="480">
+    <br>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>

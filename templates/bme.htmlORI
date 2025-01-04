@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BME680 Sensor Data</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 40vw;
+        }
+        .button {
+            width: 100px;
+            height: 64px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            color: black;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 20px;
+            color: #4CAF50;
+        }
+        .divider {
+            border: 0;
+            border-top: 3px solid #4CAF50;
+            width: 40vw;
+            margin: 20px 0;
+        }
+        table {
+            width: 40vw;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #4CAF50;
+            color: black;
+        }
+        th {
+            background-color: #4CAF50;
+            color: black;
+            border-bottom: 3px solid black;
+        }
+        tr.excellent { background-color: #00ff00; }
+        tr.good { background-color: #ccff00; }
+        tr.lightly-polluted { background-color: #ffff00; }
+        tr.moderately-polluted { background-color: #ff9900; }
+        tr.heavily-polluted { background-color: #ff0000; }
+        tr.severely-polluted { background-color: #990000; }
+        tr.extremely-polluted { background-color: #663300; }
+        .legend {
+            width: 40vw;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="button" onclick="window.location.href='{{ url_for('index') }}'">Zpět</button>
+        <h1 class="title">BME680 Sensor Data</h1>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Legenda barev nahoře -->
+    <div class="legend">
+        <div class="legend-item"><div class="color-box" style="background-color: #00ff00;"></div> 0 - 50: Excellent</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #ccff00;"></div> 51 - 100: Good</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #ffff00;"></div> 101 - 150: Lightly Polluted</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #ff9900;"></div> 151 - 200: Moderately Polluted</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #ff0000;"></div> 201 - 250: Heavily Polluted</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #990000;"></div> 251 - 350: Severely Polluted</div>
+        <div class="legend-item"><div class="color-box" style="background-color: #663300;"></div> > 351: Extremely Polluted</div>
+    </div>
+
+    <hr class="divider">
+
+    <table>
+        <!-- Řádek s názvy sloupců s černou čárou pod sebou -->
+        <tr>
+            <th>Time</th>
+            <th>Temperature (°C)</th>
+            <th>Pressure (hPa)</th>
+            <th>Humidity (%)</th>
+            <th>IAQ</th>
+        </tr>
+        <!-- Data rows will be inserted dynamically here -->
+    </table>
+
+    <script>
+        function loadSensorData() {
+            fetch(`bme680_data.csv?timestamp=${new Date().getTime()}`)
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split('\n').slice(1).reverse(); // Reverse the rows to show the latest first
+                    const table = document.querySelector('table');
+
+                    // Vymaž staré záznamy
+                    table.querySelectorAll('tr:not(:first-child)').forEach(row => row.remove());
+
+                    // Filtrovat záznamy starší než 24 hodin nebo více než 120 záznamů
+                    const filteredRows = rows.filter(row => {
+                        const columns = row.split(',');
+                        const time = new Date(columns[0]);
+                        const now = new Date();
+                        const timeDiff = now - time;
+                        return timeDiff <= 24 * 60 * 60 * 1000; // 24 hodin v milisekundách
+                    }).slice(0, 120); // Max 120 záznamů
+
+                    if (filteredRows.length === 0) {
+                        console.warn('No valid data in CSV file');
+                        return;
+                    }
+
+                    filteredRows.forEach(row => {
+                        const columns = row.split(',');
+                        if (columns.length < 5) {
+                            console.warn('Invalid row:', row);
+                            return;
+                        }
+
+                        const time = columns[0];
+                        const temp = columns[1];
+                        const pressure = columns[2];
+                        const humidity = columns[3];
+                        const iaq = parseFloat(columns[4]);
+
+                        let className = '';
+                        if (iaq <= 50) className = 'excellent';
+                        else if (iaq <= 100) className = 'good';
+                        else if (iaq <= 150) className = 'lightly-polluted';
+                        else if (iaq <= 200) className = 'moderately-polluted';
+                        else if (iaq <= 250) className = 'heavily-polluted';
+                        else if (iaq <= 350) className = 'severely-polluted';
+                        else className = 'extremely-polluted';
+
+                        const rowHtml = `
+                            <tr class="${className}">
+                                <td>${time}</td>
+                                <td>${temp}</td>
+                                <td>${pressure}</td>
+                                <td>${humidity}</td>
+                                <td>${iaq.toFixed(2)}</td>
+                            </tr>
+                        `;
+                        table.insertAdjacentHTML('beforeend', rowHtml); // Insert rows at the end
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
+        }
+
+        setInterval(loadSensorData, 60000); // Aktualizace každou minutu
+        loadSensorData();
+    </script>
+    <script src="{{ url_for('static', filename='js/kill.js') }}"></script>
+</body>
+</html>

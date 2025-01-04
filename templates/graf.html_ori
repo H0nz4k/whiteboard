@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graf BME680 Sensor Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js knihovna -->
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin: 20px 0;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        h2 {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Graf BME680 Sensor Data</h1>
+    
+    <h2>Vývoj IAQ za posledních 30 dní</h2>
+    <div class="container">
+        <canvas id="iaqChart"></canvas> <!-- Plátno pro IAQ graf -->
+    </div>
+    
+    <h2>Vývoj teploty za posledních 7 dní</h2>
+    <div class="container">
+        <canvas id="tempChart"></canvas> <!-- Plátno pro teplotní graf -->
+    </div>
+
+    <script>
+        // Funkce pro načítání a filtrování dat z CSV
+        async function loadCSVData() {
+            const response = await fetch('bme680_data.csv');
+            const data = await response.text();
+
+            const iaqLabels = [];
+            const iaqs = [];
+            const tempLabels = [];
+            const temperatures = [];
+            const now = new Date();
+
+            const rows = data.split('\n').slice(1); // Vynechání hlavičky
+            rows.forEach(row => {
+                const columns = row.split(',');
+                if (columns.length > 4) {
+                    const time = new Date(columns[0]);
+                    const timeDiff = now - time;
+
+                    // Data pro IAQ za posledních 30 dní
+                    if (timeDiff <= 30 * 24 * 60 * 60 * 1000) {
+                        iaqLabels.push(columns[0]); // Čas
+                        iaqs.push(parseFloat(columns[4])); // IAQ
+                    }
+
+                    // Data pro teplotu za posledních 7 dní
+                    if (timeDiff <= 7 * 24 * 60 * 60 * 1000) {
+                        tempLabels.push(columns[0]); // Čas
+                        temperatures.push(parseFloat(columns[1])); // Teplota
+                    }
+                }
+            });
+
+            return { iaqLabels, iaqs, tempLabels, temperatures };
+        }
+
+        // Funkce pro vytvoření grafů
+        async function createCharts() {
+            const data = await loadCSVData();
+
+            // Graf pro IAQ za posledních 30 dní
+            const iaqCtx = document.getElementById('iaqChart').getContext('2d');
+            new Chart(iaqCtx, {
+                type: 'line',
+                data: {
+                    labels: data.iaqLabels,
+                    datasets: [
+                        {
+                            label: 'IAQ',
+                            data: data.iaqs,
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'IAQ'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Graf pro teplotu za posledních 7 dní
+            const tempCtx = document.getElementById('tempChart').getContext('2d');
+            new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: data.tempLabels,
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: data.temperatures,
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Vytvoř grafy po načtení stránky
+        createCharts();
+    </script>
+</body>
+</html>
+

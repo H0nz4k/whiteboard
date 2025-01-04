@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poslední změny</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+            box-sizing: border-box;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 60vw;
+        }
+        .button {
+            width: 100px;
+            height: 64px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            color: black;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 20px;
+            color: #4CAF50;
+        }
+        .divider {
+            border: 0;
+            border-top: 3px solid #4CAF50;
+            width: 60vw;
+            margin: 20px 0;
+        }
+        .changes {
+            width: 60vw;
+        }
+        .change-record {
+            margin-bottom: 20px;
+        }
+        .timestamp {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+        .images {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+        .image-container {
+            text-align: center;
+            width: 48%;
+        }
+        .image-container a {
+            display: inline-block;
+            width: 100%;
+        }
+        .image-container img {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer; /* Nastavení kurzoru na pointer */
+        }
+        #older {
+            cursor: pointer;
+            color: #4CAF50;
+            font-size: 18px;
+            text-align: center;
+        }
+    </style>
+    <script>
+        function showOlder() {
+            const records = document.querySelectorAll('.change-record');
+            records.forEach((record, index) => {
+                if (index >= 4) {
+                    record.style.display = 'block';
+                }
+            });
+            document.querySelectorAll('.divider').forEach((divider, index) => {
+                if (index >= 4) {
+                    divider.style.display = 'block';
+                }
+            });
+            document.getElementById('older').style.display = 'none';
+        }
+
+        setInterval(function() {
+            fetch(window.location.href, { method: 'GET' })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newChanges = doc.getElementById('changes-container');
+                document.getElementById('changes-container').innerHTML = newChanges.innerHTML;
+            });
+        }, 20000); // 20 sekund
+    </script>
+</head>
+<body>
+
+    <div class="header">
+        <button class="button" onclick="window.location.href='{{ url_for('index') }}'">Zpět</button>
+        <h1 class="title">Poslední změny</h1>
+    </div>
+    <hr class="divider">
+
+    <div class="changes" id="changes-container">
+        {% for change in changes %}
+        <div class="change-record" style="{% if loop.index > 4 %}display:none;{% endif %}">
+            <p class="timestamp"><strong>Datum a čas:</strong> {{ change.timestamp[:4] }}.{{ change.timestamp[4:6] }}.{{ change.timestamp[6:8] }} {{ change.timestamp[9:11] }}:{{ change.timestamp[12:14] }}</p>
+            <div class="images">
+                <div class="image-container">
+                    <p>Původní</p>
+                    <a href="{{ url_for('download_file', filename=change.folder + '/initial.jpg') }}" target="_blank">
+                        <img src="{{ url_for('download_file', filename=change.folder + '/initial.jpg') }}" alt="Původní snímek">
+                    </a>
+                </div>
+                <div class="image-container">
+                    <p>Změněný</p>
+                    <a href="{{ url_for('download_file', filename=change.folder + '/changed.jpg') }}" target="_blank">
+                        <img src="{{ url_for('download_file', filename=change.folder + '/changed.jpg') }}" alt="Změněný snímek">
+                    </a>
+                </div>
+            </div>
+            {% if loop.index <= 4 %}
+                <hr class="divider">
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="older" onclick="showOlder()">Starší změny</div>
+</body>
+</html>

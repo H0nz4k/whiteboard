@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PICAM</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #000;
+            box-sizing: border-box;
+        }
+        img {
+            width: 60vw; /* Výchozí šířka streamu */
+            height: auto;
+            object-fit: contain;
+        }
+        .info {
+            margin-top: 10px;
+            font-size: 18px;
+            color: white;
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60vw;
+            margin-top: 20px;
+        }
+        button, #motion {
+            width: 100px; /* Nastavení stejné šířky pro tlačítka LED a detekci změny */
+            height: 64px;
+            font-size: 24px;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        button {
+            background-color: #4CAF50;
+            margin: 0 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #motion {
+            background-color: #4CAF50;
+        }
+        #motion.detected {
+            background-color: #ff0000;
+        }
+        .resize-button {
+            width: 64px;
+            height: 64px;
+            font-size: 24px;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            background-color: #4CAF50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 10px;
+        }
+    </style>
+    <script>
+        // Spustí LED skript
+        function runLED() {
+            fetch('/run_led', {
+                method: 'POST',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    alert("Failed to execute LED script!");
+                }
+            })
+            .catch(error => {
+                alert("An error occurred: " + error);
+            });
+        }
+
+        // Funkce pro uložení snímku
+        function takePhoto() {
+            fetch('/take_photo', {
+                method: 'POST',
+            })
+            .then(response => {
+                if (!response.ok) {
+                    alert("Failed to take photo!");
+                } else {
+                    alert("Photo saved successfully!");
+                }
+            })
+            .catch(error => {
+                alert("An error occurred while taking the photo: " + error);
+            });
+        }
+
+        // Získává systémové informace každých 0,5 sekundy
+        function fetchInfo() {
+            fetch('/get_info')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('info').innerText = 
+                    'Time: ' + data.current_time + ' / ' +
+                    'Uptime: ' + data.uptime + ' / ' +
+                    'Temperature: ' + data.temperature;
+
+                const motionBox = document.getElementById('motion');
+                if (data.motion_detected) {
+                    motionBox.classList.add('detected');
+                    motionBox.innerText = (data.percentage_diff !== undefined) ? data.percentage_diff + "%" : "";
+                } else {
+                    motionBox.classList.remove('detected');
+                    motionBox.innerText = "";
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching system info:', error);
+            });
+        }
+
+        // Funkce pro změnu velikosti videa
+        function adjustVideoSize(change) {
+            const img = document.querySelector('img');
+            let currentWidth = parseFloat(img.style.width || '60'); // Výchozí šířka je 60vw
+            currentWidth = Math.max(10, Math.min(100, currentWidth + change)); // Zajištění, že šířka zůstane mezi 10 % a 100 %
+            img.style.width = currentWidth + 'vw'; // Aplikování nové šířky
+        }
+
+        // Sledování aktivity uživatele a heartbeat signál
+        let activityTimeout;
+
+        function resetActivityTimer() {
+            clearTimeout(activityTimeout);
+            activityTimeout = setTimeout(function() {
+                // Když dojde k odhlášení kvůli neaktivitě, spustí se motion.service
+                fetch('/start_motion', {
+                    method: 'GET'
+                });
+                window.location.href = "/logout";  // Odhlášení po 30 sekundách nečinnosti
+            }, 30000);  // 30 sekund
+        }
+
+        // Heartbeat funkce pro server
+        function sendHeartbeat() {
+            fetch('/heartbeat', {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Failed to send heartbeat");
+                }
+            })
+            .catch(error => {
+                console.error("Error sending heartbeat:", error);
+            });
+        }
+
+        window.onload = function() {
+            document.onmousemove = resetActivityTimer;  // Detekuje pohyb myši
+            document.onkeydown = resetActivityTimer;    // Detekuje stisk klávesy
+            resetActivityTimer();  // Nastaví počáteční časovač
+            fetchInfo();  // Získání počátečních informací
+
+            setInterval(sendHeartbeat, 10000);  // Odesílá heartbeat každých 10 sekund
+            setInterval(fetchInfo, 500);  // Aktualizace každých 0,5 sekundy
+        };
+
+        window.onbeforeunload = function() {
+            fetch('/stop_stream', { method: 'GET' });  // Zastaví stream při opuštění stránky
+            setTimeout(function() {
+                fetch('/start_motion', { method: 'GET' });  // Spuštění detekce pohybu
+            }, 1000);  // Krátká prodleva před spuštěním motion.service
+        };
+    </script>
+</head>
+<body>
+    <img src="{{ url_for('video_feed') }}" alt="Live Stream">
+    
+    <!-- Informace v jednom řádku pod streamem -->
+    <div id="info" class="info"></div>
+    
+    <!-- Kontejner pro tlačítka v jedné řadě -->
+    <div class="controls">
+        <button onclick="runLED()">LED</button>
+        <button class="resize-button" onclick="adjustVideoSize(-5)">-</button>
+        <button class="resize-button" onclick="adjustVideoSize(5)">+</button>
+        <button onclick="takePhoto()">F</button> <!-- Nové tlačítko pro focení -->
+        <button onclick="window.location.href='{{ url_for('last') }}'">LAST</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- Zajišťuje responzivní zobrazení na mobilu -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding-top: 20px;  /* Posun od horního okraje */
+            background-color: #121212;  /* Tmavé pozadí pro dark mode */
+            color: white;  /* Text bude bílý */
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #4CAF50;  /* Zelená barva pro nadpis */
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            width: 80%;
+            max-width: 400px;
+            background-color: #1E1E1E;  /* Tmavě šedé pozadí formuláře */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.5);  /* Tmavší stíny */
+        }
+        label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #BBBBBB;  /* Světle šedá barva pro text formuláře */
+        }
+        input {
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #333;  /* Tmavý rámeček pro inputy */
+            background-color: #333;  /* Tmavší pozadí inputů */
+            color: white;  /* Bílý text v inputech */
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input::placeholder {
+            color: #AAAAAA;  /* Světle šedý text pro placeholder */
+        }
+        button {
+            padding: 15px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: #FF6B6B;  /* Červená barva pro chybové hlášky */
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .forgot-password {
+            margin-top: 10px;
+            color: #4CAF50;  /* Stejná zelená barva */
+            font-size: 16px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>Please log in</h2>
+    
+    <!-- Zobrazení chybové hlášky při nesprávném přihlášení -->
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    
+    <form method="post">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+
+    <!-- Text pod formulářem -->
+    <p class="forgot-password">Neznáš heslo? Zeptej se Honzáka.</p>
+</body>
+</html>
